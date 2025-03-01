@@ -15,7 +15,7 @@ import (
 func GetAllGoals(c *gin.Context) {
 	var goals []models.Goals
 	var goalsDTO []DTOs.GoalDTO
-	resp := database.DB.Find(&goals, "id = ?", c.Param("id"))
+	resp := database.DB.Find(&goals, "user_id = ?", c.Param("id"))
 	if resp.Error != nil {
 		// Check if error is not due to no rows found
 		if resp.Error == gorm.ErrRecordNotFound {

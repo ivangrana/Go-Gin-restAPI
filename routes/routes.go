@@ -10,15 +10,16 @@ import (
 
 func RegisterRoutes(router *gin.Engine) {
 
+	auth := router.Group("/auth")
+	{
+		auth.POST("/login", handlers.Login)
+	}
+
 	userGroup := router.Group("/users")
+	userGroup.Use(middleware.AuthMiddleware())
 	{
 		userGroup.GET("/", controllers.GetAllUsers)
 		userGroup.POST("/", controllers.CreateUser)
-
-		auth := userGroup.Group("/auth")
-		{
-			auth.POST("/login", handlers.Login)
-		}
 
 		user := userGroup.Group("/:id")
 		{
