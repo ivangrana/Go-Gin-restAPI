@@ -8,10 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var budgetService *services.BudgetService
-
 func GetAllBudgets(c *gin.Context) {
-	budgets, err := budgetService.GetAllBudgets(c.Param("id"))
+	budgets, err := services.GetAllBudgets(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -25,7 +23,7 @@ func GetBudgetById(c *gin.Context) {
 		return
 	}
 
-	budget, err := budgetService.GetBudgetById(c.Param("budget_id"))
+	budget, err := services.GetBudgetById(c.Param("budget_id"))
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -46,7 +44,7 @@ func CreateBudget(c *gin.Context) {
 		return
 	}
 
-	resp := budgetService.CreateBudget(c.Param("id"), budgetDTO)
+	resp := services.CreateBudget(c.Param("id"), budgetDTO)
 
 	if resp != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": resp.Error()})
@@ -58,7 +56,7 @@ func CreateBudget(c *gin.Context) {
 func DeleteBudget(c *gin.Context) {
 	id := c.Param("budget_id")
 
-	err := budgetService.DeleteBudget(id)
+	err := services.DeleteBudget(id)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

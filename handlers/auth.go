@@ -18,8 +18,14 @@ func Login(c *gin.Context) {
 	var userDTO dto.UserLoginDTO
 	var token string
 
+	//in case the json body is empty
 	if err := c.ShouldBindJSON(&userDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if userDTO.Name == "" || userDTO.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"erro": "Name and password are required"})
 		return
 	}
 

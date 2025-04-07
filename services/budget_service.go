@@ -5,23 +5,13 @@ import (
 	"Phinance/dto"
 	"Phinance/models"
 	"strconv"
-
-	"gorm.io/gorm"
 )
 
-type BudgetService struct {
-	db *gorm.DB
-}
-
-func NewBudgetService() *BudgetService {
-	return &BudgetService{db: database.DB}
-}
-
-func (s *BudgetService) GetAllBudgets(userID string) ([]dto.BudgetDTO, error) {
+func GetAllBudgets(userID string) ([]dto.BudgetDTO, error) {
 	var budgets []models.Budget
 	var budgetDTOs []dto.BudgetDTO
 
-	resp := s.db.Find(&budgets, "user_ID = ?", userID)
+	resp := database.DB.Find(&budgets, "user_ID = ?", userID)
 	if resp.Error != nil {
 		return nil, resp.Error
 	}
@@ -38,10 +28,10 @@ func (s *BudgetService) GetAllBudgets(userID string) ([]dto.BudgetDTO, error) {
 	return budgetDTOs, nil
 }
 
-func (s *BudgetService) GetBudgetById(budgetID string) (*dto.BudgetDTO, error) {
+func GetBudgetById(budgetID string) (*dto.BudgetDTO, error) {
 	var budget models.Budget
 
-	resp := s.db.First(&budget, budgetID)
+	resp := database.DB.First(&budget, budgetID)
 	if resp.Error != nil {
 		return nil, resp.Error
 	}
@@ -54,11 +44,12 @@ func (s *BudgetService) GetBudgetById(budgetID string) (*dto.BudgetDTO, error) {
 	}, nil
 }
 
-func (s *BudgetService) CreateBudget(userID string, budgetDTO dto.BudgetCreateDTO) error {
+func CreateBudget(userID string, budgetDTO dto.BudgetCreateDTO) error {
 	id, err := strconv.Atoi(userID)
 	if err != nil {
 		return err
 	}
+
 	budget := models.Budget{
 		UserID:      uint(id),
 		LimitValue:  budgetDTO.LimitValue,
@@ -66,9 +57,9 @@ func (s *BudgetService) CreateBudget(userID string, budgetDTO dto.BudgetCreateDT
 		FinalDate:   budgetDTO.FinalDate,
 	}
 
-	return s.db.Create(&budget).Error
+	return database.DB.Create(&budget).Error
 }
 
-func (s *BudgetService) DeleteBudget(budgetID string) error {
-	return s.db.Delete(&models.Budget{}, budgetID).Error
+func DeleteBudget(budgetID string) error {
+	return database.DB.Delete(&models.Budget{}, budgetID).Error
 }
