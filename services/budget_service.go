@@ -55,7 +55,10 @@ func (s *BudgetService) GetBudgetById(budgetID string) (*dto.BudgetDTO, error) {
 }
 
 func (s *BudgetService) CreateBudget(userID string, budgetDTO dto.BudgetCreateDTO) error {
-	id, _ := strconv.Atoi(userID)
+	id, err := strconv.Atoi(userID)
+	if err != nil {
+		return err
+	}
 	budget := models.Budget{
 		UserID:      uint(id),
 		LimitValue:  budgetDTO.LimitValue,
