@@ -15,3 +15,7 @@ type BudgetCreateDTO struct {
 	InitialDate time.Time `json:"initial_date"`
 	FinalDate   time.Time `json:"final_date"`
 }
+
+type BudgetUpdateDTO struct {
+	LimitValue float64 `json:"limit_value"`
+}

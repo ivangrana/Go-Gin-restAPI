@@ -60,6 +60,21 @@ func CreateBudget(userID string, budgetDTO dto.BudgetCreateDTO) error {
 	return database.DB.Create(&budget).Error
 }
 
+func UpdateBudget(budgetID string, budgetDTO dto.BudgetUpdateDTO) error {
+	id, err := strconv.Atoi(budgetID)
+	if err != nil {
+		return err
+	}
+
+	editBudget := models.Budget{
+		ID:         uint(id),
+		LimitValue: budgetDTO.LimitValue,
+	}
+
+	return database.DB.Updates(&editBudget).Error
+
+}
+
 func DeleteBudget(budgetID string) error {
 	return database.DB.Delete(&models.Budget{}, budgetID).Error
 }

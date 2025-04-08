@@ -42,6 +42,7 @@ func RegisterRoutes(router *gin.Engine) {
 				budgets.GET("/", controllers.GetAllBudgets)
 				budgets.GET("/:budget_id", controllers.GetBudgetById)
 				budgets.POST("/", controllers.CreateBudget)
+				budgets.PUT("/:budget_id", controllers.UpdateBudget)
 				budgets.DELETE("/:budget_id", controllers.DeleteBudget)
 
 			}

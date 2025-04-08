@@ -53,6 +53,27 @@ func CreateBudget(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+func UpdateBudget(c *gin.Context) {
+	var budgetDTO dto.BudgetUpdateDTO
+	if err := c.ShouldBindJSON(&budgetDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if c.Param("id") == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user id is required"})
+		return
+	}
+
+	resp := services.UpdateBudget(c.Param("budget_id"), budgetDTO)
+
+	if resp != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": resp.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, resp)
+}
+
 func DeleteBudget(c *gin.Context) {
 	id := c.Param("budget_id")
 
