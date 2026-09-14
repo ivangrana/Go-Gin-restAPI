@@ -33,6 +33,7 @@ func RegisterRoutes(router *gin.Engine) {
 				goals.GET("/", controllers.GetAllGoals)
 				goals.GET("/:goal_id", controllers.GetGoalById)
 				goals.POST("/", controllers.CreateGoal)
+				goals.PUT("/:goal_id", controllers.UpdateGoal)
 				goals.DELETE("/:goal_id", controllers.DeleteGoal)
 			}
 
