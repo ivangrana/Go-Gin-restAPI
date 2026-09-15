@@ -33,5 +33,6 @@ func Init() *gorm.DB {
 	db.AutoMigrate(&models.Categories{})
 	db.AutoMigrate(&models.Transactions{})
 	db.AutoMigrate(&models.MarketProduct{})
+	db.AutoMigrate(&models.Receipt{})
 	return db
 }
