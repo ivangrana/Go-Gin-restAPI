@@ -9,4 +9,5 @@ type Transactions struct {
 	Value       float64
 	Description string
 	Date        time.Time
+	Receipts    []Receipt `gorm:"foreignKey:TransactionID"`
 }

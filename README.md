@@ -85,3 +85,8 @@ go run main.go
 | GET    | /transactions/:transaction_id | Get transaction by ID       |
 | PUT    | /transactions/:transaction_id | Update transaction          |
 | DELETE | /transactions/:transaction_id | Delete transaction          |
+| GET    | /users/:id/receipts              | Get all receipts                |
+| POST   | /users/:id/receipts              | Create a new receipt            |
+| GET    | /users/:id/receipts/:receipt_id  | Get receipt by ID               |
+| PUT    | /users/:id/receipts/:receipt_id  | Update receipt                  |
+| DELETE | /users/:id/receipts/:receipt_id  | Delete receipt                  |

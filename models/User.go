@@ -7,4 +7,5 @@ type User struct {
 	Budget   []Budget       `gorm:"foreignKey:UserID"`
 	Transac  []Transactions `gorm:"foreignKey:UserID"`
 	Goals    []Goals        `gorm:"foreignKey:UserID"`
+	Receipts []Receipt      `gorm:"foreignKey:UserID"`
 }
