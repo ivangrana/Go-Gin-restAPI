@@ -1,39 +1,20 @@
 package controllers
 
 import (
-	"Phinance/database"
-	DTOs "Phinance/dto"
-	"Phinance/models"
-	"fmt"
+	dto "Phinance/dto"
+	"Phinance/services"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func GetAllGoals(c *gin.Context) {
-	var goals []models.Goals
-	var goalsDTO []DTOs.GoalDTO
-	resp := database.DB.Find(&goals, "user_id = ?", c.Param("id"))
-	if resp.Error != nil {
-		// Check if error is not due to no rows found
-		if resp.Error == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Goal not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": resp.Error.Error()})
-		}
+	goals, err := services.GetAllGoals(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	//dto usage
-	for _, goal := range goals {
-		goalDTO := DTOs.GoalDTO{
-			ID:     goal.ID,
-			Amount: goal.Amount,
-		}
-		goalsDTO = append(goalsDTO, goalDTO)
-	}
-	c.JSON(http.StatusOK, goalsDTO)
+	c.JSON(http.StatusOK, goals)
 }
 
 func GetGoalById(c *gin.Context) {
@@ -42,58 +23,63 @@ func GetGoalById(c *gin.Context) {
 		return
 	}
 
-	var goal models.Goals
-	var goalDTO DTOs.GoalDTO
-
-	resp := database.DB.First(&goal, c.Param("goal_id"))
-	fmt.Println(resp.Error)
-	if resp.Error != nil {
-		// Check if error is not due to no rows found
-		if resp.Error == gorm.ErrRecordNotFound {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Goal not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": resp.Error.Error()})
-		}
-		return
-	} else {
-		goalDTO = DTOs.GoalDTO{
-			ID:     goal.ID,
-			Amount: goal.Amount,
-		}
-		c.JSON(http.StatusOK, goalDTO)
-	}
-
-}
-
-func CreateGoal(c *gin.Context) {
-	var goal models.Goals
-	var goalDTO DTOs.GoalCreateDTO
-
-	//convert string to uint
-	id, _ := strconv.Atoi(c.Param("id"))
-
-	err := c.ShouldBindJSON(&goalDTO)
+	goal, err := services.GetGoalById(c.Param("goal_id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	goal.UserID = uint(id)
-	goal.Amount = goalDTO.Amount
-
-	database.DB.Create(&goal)
-	c.JSON(http.StatusCreated, gin.H{"message": "goal created"})
+	c.JSON(http.StatusOK, goal)
 }
 
-func DeleteGoal(c *gin.Context) {
-	var goal models.Goals
-	id := c.Param("goal_id")
-	// database.DB.First(&goal, "id = ?", id)
+func CreateGoal(c *gin.Context) {
+	var goalDTO dto.GoalCreateDTO
 
-	if err := database.DB.Delete(&goal, "id = ?", id).Error; err != nil {
+	if err := c.ShouldBindJSON(&goalDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"Response": "Goal deleted"})
+	if c.Param("id") == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user id is required"})
+		return
+	}
+
+	if err := services.CreateGoal(c.Param("id"), goalDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "goal created"})
+}
+
+func UpdateGoal(c *gin.Context) {
+	var goalDTO dto.GoalUpdateDTO
+
+	if err := c.ShouldBindJSON(&goalDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if c.Param("goal_id") == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "goal_id is required"})
+		return
+	}
+
+	if err := services.UpdateGoal(c.Param("goal_id"), goalDTO); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "goal updated"})
+}
+
+func DeleteGoal(c *gin.Context) {
+	id := c.Param("goal_id")
+
+	if err := services.DeleteGoal(id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"success": "goal deleted"})
 }
