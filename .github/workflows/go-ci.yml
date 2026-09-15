@@ -1,0 +1,138 @@
+name: Go CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job 1: Lint stage - checks code formatting and quality
+  lint:
+    name: Lint and Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Check gofmt
+        run: |
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted with gofmt:"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Run go vet
+        run: go vet ./...
+
+  # Job 2: Test stage - runs unit tests with coverage
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Generate coverage report
+        run: go tool cover -func=coverage.out
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.out
+          retention-days: 30
+
+  # Job 3: Build stage - compiles the application for multiple platforms
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        go-version: ['1.23']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Build binary
+        run: |
+          mkdir -p bin
+          CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/app .
+
+      - name: Verify build artifact
+        run: |
+          ls -la bin/
+          file bin/app
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-app-${{ matrix.go-version }}
+          path: bin/app
+          retention-days: 30
+
+  # Job 4: Docker build stage - verifies the Dockerfile builds successfully
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: phinance-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify image was built
+        run: docker images | grep phinance-api
