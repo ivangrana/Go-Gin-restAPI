@@ -41,14 +41,130 @@ go run main.go
 
 ## Request workflow example:
 
-![image](https://github.com/user-attachments/assets/589a33a7-c36e-4613-a6ac-ff9d28448daf)
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Gin as Gin Router
+    participant MW as Auth Middleware
+    participant Ctrl as Controller
+    participant Svc as Service Layer
+    participant GORM as GORM
+    participant DB as PostgreSQL
+
+    Client->>Gin: HTTP Request (Authorization: Bearer <JWT>)
+    Gin->>MW: Route matching
+    alt Protected route
+        MW->>MW: Parse & validate JWT
+        alt Token invalid
+            MW-->>Client: 401 Unauthorized
+        else Token valid
+            MW->>Ctrl: Forward to controller
+        end
+    else Public route (e.g. /auth/login)
+        Gin->>Ctrl: Forward directly
+    end
+    Ctrl->>Ctrl: Bind/validate JSON payload
+    Ctrl->>Svc: Call business logic function
+    Svc->>GORM: Query / Create / Update / Delete
+    GORM->>DB: SQL statement
+    DB-->>GORM: Result set
+    GORM-->>Svc: Model / error
+    Svc-->>Ctrl: DTO / error
+    Ctrl-->>Client: JSON response (200 / 400 / 404)
+```
 
 ## Components Diagram:
-![image](https://kroki.io/plantuml/svg/eNptVE1v1DAQvftXmJzgUPVeIVQo1QLqqss2wIH2YOIha-p4VrajCqH-d8Z2Etub7inz5mU-3rzspfPC-nHQ7JU_wAD8qIUyjHU4HNGA8bzZKMOvTa8M8Nfvd5_5_vqufdNw4Thh_B_j9Cvoexw9uJi38fGUsFVSangSNtQb_SHVGhaUPVftr9B4i1qDTUW7HE_Nf35zYHnmPST0wyh78Gt8g0K7NXwlPPRoFbyQa60wTnReoXkhuxX2EfzOohy7ul-9ySdhZBy7WPswY9MqNxhEnZinBT4KL34JR7ptbvfbVEDO2OoQO3S-t3D39SYSjylcnwMl6CTtEB-nSouyDzlMkhZA1LKIs4gFWKpXwJVsCX8-Xbi9TZNJj9W1KVFdOcdhohxN8_zNSDFMBqtRIhzm0DhK3nz50cYR_jx5xsJxzs7eTc7mF2R36JXzwZxsAkO-NOnF_E1wjxUpWz5waC3Hf6PlR4se4oAVe3EKcc8FGehcB680QbDcLDAXS8xVg1vuTaxNnDCu6aBZvxdEpneiRMQe3L1J7uBvKR2Pwdgyx2mr70IriqlfZ0HS_RR5o6n5JGKgbsCAjdQWHyHsUGhR8HLJmbc0DKzZ0oFKn50h1ZLIFWtyNXHos8Ot6kNnKnUJRtIf3397z5v6)
+
+```mermaid
+flowchart LR
+    subgraph Client
+        U[HTTP Client]
+    end
+
+    subgraph Server["Go-Gin REST API :8080"]
+        direction TB
+        M[main.go<br/>Bootstrap]
+        R[routes/routes.go<br/>RegisterRoutes]
+        MW[middleware/auth.go<br/>AuthMiddleware JWT]
+        H[handlers/auth.go<br/>Login / Token]
+        C[controllers/<br/>users, budgets, goals,<br/>categories, transactions,<br/>market products]
+        S[services/<br/>budget_service,<br/>goal_service,<br/>category_service]
+        DTO[dto/<br/>Request/Response DTOs]
+        MOD[models/<br/>User, Budget, Goals,<br/>Categories, Transactions,<br/>MarketProduct]
+        DB[database/connection.go<br/>GORM Init + AutoMigrate]
+    end
+
+    PG[(PostgreSQL)]
+
+    U -->|HTTP| M
+    M --> R
+    R --> MW
+    R --> H
+    MW --> C
+    C --> S
+    C --> DTO
+    S --> MOD
+    C --> MOD
+    H --> MOD
+    H --> DB
+    S --> DB
+    C --> DB
+    DB -->|GORM| PG
+```
 
 ## Database Diagram:
 
-![image](https://github.com/user-attachments/assets/315f0a81-e6fd-45ed-a839-4696963b69fc)
+```mermaid
+erDiagram
+    USER ||--o{ BUDGET       : "has"
+    USER ||--o{ TRANSACTION  : "has"
+    USER ||--o{ GOALS        : "has"
+    BUDGET ||--o{ GOALS      : "owns"
+    CATEGORIES ||--o{ TRANSACTION : "classifies"
+
+    USER {
+        uint   id PK
+        string name
+        string password
+    }
+
+    BUDGET {
+        uint     id PK
+        uint     user_id FK
+        float    limit_value
+        datetime initial_date
+        datetime final_date
+        datetime updated_at
+    }
+
+    TRANSACTION {
+        uint     id PK
+        uint     user_id FK
+        uint     category_id FK
+        float    value
+        string   description
+        datetime date
+    }
+
+    GOALS {
+        uint   id PK
+        uint   user_id FK
+        float  amount
+        uint   budget_id FK
+    }
+
+    CATEGORIES {
+        uint   id PK
+        string name
+    }
+
+    MARKET_PRODUCT {
+        uint    id PK
+        string  product_name
+        float   average_price
+        string  priority
+    }
+```
 
 
 ## API endpoints
